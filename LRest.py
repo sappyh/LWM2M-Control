@@ -85,11 +85,11 @@ class LRest():
         '''
     def searchDictionary(resource,object_=None,instance=None):
         '''searches the dictionary or object>instance>resources to find the desired resource to activate'''
-        obj_matches=[]
+        objects_found=0
         if object_=None:     
             for obj_key,obj_val in self.page_objects.items():
-                obj_matches=obj_matches.append(self.searchObjects(obj_key))
-                if len(matches)>1:
+                objects_found+=1
+                if objects_found>1
                     raise ValueError("Multiple resources were found that satisfy conditions. Please specify Object name")
         else:
             obj_matches = self.searchObjects(object_)
@@ -100,11 +100,11 @@ class LRest():
 
     def searchObjects(obj_key,instance):
         '''helper method of searchDictionary that searches the top level objects in the dictionary'''
-        inst_matches=[]
-        if instance=None:    
+        instances_found=0
+        if instance=None:
             for inst_key,inst_val in self.page_objects[obj_key].items():
-                inst_matches=inst_matches.append(self.searchInstances(obj_key,inst_key))              
-                if len(inst_matches)>1:
+                instances_found+=1             
+                if instances_found>1:
                     raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number)
         else:
             matches = self.searchInstances(obj_key,instance)
