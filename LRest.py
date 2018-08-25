@@ -85,38 +85,43 @@ class LRest():
         '''
     def searchDictionary(resource,object_=None,instance=None):
         '''searches the dictionary or object>instance>resources to find the desired resource to activate'''
-        objects_found=0
+        obj_matches=[]
         if object_=None:     
             for obj_key,obj_val in self.page_objects.items():
-                objects_found+=1
-                if objects_found>1
+                res_val = self.searchObjects(obj_key,instance))
+                if res_val is not None:  
+                    obj_matches.append(res_val)
+                if len(matches)>0:
                     raise ValueError("Multiple resources were found that satisfy conditions. Please specify Object name")
         else:
-            obj_matches = self.searchObjects(object_)
+            res_val = self.searchObjects(object_)
         
-        return obj_matches
+        if res_val is None:
+            raise ValueError("Could not find a resource that satisfies conditions")
 
+        return res_val
 
 
     def searchObjects(obj_key,instance):
         '''helper method of searchDictionary that searches the top level objects in the dictionary'''
-        instances_found=0
-        if instance=None:
+        inst_matches=[]
+        if instance=None:    
             for inst_key,inst_val in self.page_objects[obj_key].items():
-                instances_found+=1             
-                if instances_found>1:
+                res_val = self.searchInstances(obj_key,inst_key))
+                if res_val is not None:  
+                    inst_matches.append(res_val)          
+                if len(inst_matches)>0:
                     raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number)
         else:
-            matches = self.searchInstances(obj_key,instance)
+            instance_matches.append(self.searchInstances(obj_key,instance))  
     
-        return matches
+        return instance_matches[0]
 
     def searchInstances(obj_key,inst_key):
         for res_key,res_val in self.page_objects[obj_key][inst_key].items():
             if res_key==resource:
                 return res_val
-        
-        raise ValueError("No resources were found which satisfy conditions")
+        return None
 
 
     def getSource(self,server,client):
