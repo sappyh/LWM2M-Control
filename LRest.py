@@ -18,6 +18,8 @@ import os
 class LRest():
     '''Wrapper class for robot libraries in python that use RESTful API'''
 
+    ERROR_MSG = "Multiple resources were found that satisfy the given inputs. Refine your search by specifying the Object and or instance"
+
     def __init__(self,server,client):
         '''sets the information required for REST commands
         Keyword arguments:
@@ -26,9 +28,11 @@ class LRest():
         clientNumber -- the client number viewable on leshan server. If only one client on a server than this is zero.
         xmlFolder -- the model folder that contains the GUI element data for the leshan server.
         '''
+        
         self.server = server
         self.client = client
         self.object_mappings = self.getSource(server,client)
+        #print(self.object_mappings)
         #self.object_mappings = self.parseUrl('http://' + server + '/#/clients/' + client)
 
     def get(self, resource, object_='default' ,instance=0, timeout=4):
@@ -63,6 +67,7 @@ class LRest():
         r.raise_for_status()
 
         '''
+
     def post(self, instance, resource, timeout = 4):
         '''Posts to the given instance on the leshan server
         Keyword arguments:
@@ -78,12 +83,47 @@ class LRest():
         # raise error if http request fails
         r.raise_for_status()
         '''
+    def searchDictionary(resource,object_=None,instance=None):
+        '''searches the dictionary or object>instance>resources to find the desired resource to activate'''
+        obj_matches=[]
+        if object_=None:     
+            for obj_key,obj_val in self.page_objects.items():
+                obj_matches=obj_matches.append(self.searchObjects(obj_key))
+                if len(matches)>1:
+                    raise ValueError("Multiple resources were found that satisfy conditions. Please specify Object name")
+        else:
+            obj_matches = self.searchObjects(object_)
+        
+        return obj_matches
+
+
+
+    def searchObjects(obj_key,instance):
+        '''helper method of searchDictionary that searches the top level objects in the dictionary'''
+        inst_matches=[]
+        if instance=None:    
+            for inst_key,inst_val in self.page_objects[obj_key].items():
+                inst_matches=inst_matches.append(self.searchInstances(obj_key,inst_key))              
+                if len(inst_matches)>1:
+                    raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number)
+        else:
+            matches = self.searchInstances(obj_key,instance)
+    
+        return matches
+
+    def searchInstances(obj_key,inst_key):
+        for res_key,res_val in self.page_objects[obj_key][inst_key].items():
+            if res_key==resource:
+                return res_val
+        
+        raise ValueError("No resources were found which satisfy conditions")
+
 
     def getSource(self,server,client):
         '''returns the source from a file if available or the html if not'''
         for file_name in os.listdir('cached_clients'):
-            if file_name==client:
-                return json.load(open(file_name))
+            if file_name==client+'.json':
+                return json.load(open('cached_clients\\' + file_name))
 
         return self.getSourceFromHTML(server,client)
 
