@@ -12,7 +12,8 @@ import requests
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
-
+import json
+import os
 
 class LRest():
     '''Wrapper class for robot libraries in python that use RESTful API'''
@@ -27,8 +28,9 @@ class LRest():
         '''
         self.server = server
         self.client = client
+        self.object_mappings = self.getSource(server,client)
         #self.object_mappings = self.parseUrl('http://' + server + '/#/clients/' + client)
-        self.object_mappings = self.parseUrl('http://169.254.235.45:5004/#/clients/6803-10.20.51.218')
+
     def get(self, resource, object_='default' ,instance=0, timeout=4):
         '''reads the value of the specified instance and resource on the leshan server
         Keyword arguments:
@@ -76,20 +78,58 @@ class LRest():
         # raise error if http request fails
         r.raise_for_status()
         '''
-    def parseUrl(self, url):
+
+    def getSource(self,server,client):
+        '''returns the source from a file if available or the html if not'''
+        for file_name in os.listdir('cached_clients'):
+            if file_name==client:
+                return json.load(open(file_name))
+
+        return self.getSourceFromHTML(server,client)
+
+    def getSourceFromHTML(self,server,client):
+        #launch headless chrome
+        driver = self.setBrowser()
+
+        #get the raw html from the webpage
+        encoded_source = self.fetchHTML(driver,'http://' + server + '/#/clients/' + client)
+
+        #parse the url into json
+        page_objects = self.parseHTML(BeautifulSoup(encoded_source,'html.parser'))
+
+        #cache the page_objects of this client so we dont have to connect to its server again to fetch html
+        self.cacheClient(page_objects,client)
+
+        return page_objects
+
+    def fetchHTML(self,driver,url):
+        #driver.get(url)
+        driver.get('https://leshan.eclipse.org/#/clients/ezhiand-test-virtualdev-leshan')
+        time.sleep(2)
+        encoded_source=driver.page_source.encode('utf-8')
+        driver.close()
+        return encoded_source
+
+    def setBrowser(self):
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('disable-gpu')
+        return webdriver.Chrome(chrome_options=options)
+
+    def cacheClient(self,page_objects,client):
+        f=open('cached_clients\\' + client + '.json','w')
+        f.write(page_objects)
+
+    def parseHTML(self,page_source):
         '''parses the url of the leshan client webpage into a dictionary containing each object, instance and resource.
         url - the url that contains the leshan client
         '''
         object_dict={}
         instance_dict={}
         resource_dict={}
-        default_instance_dict={}
 
-        #soup = self.getSource(url)
-        soup = self.getSourceFromText('out.txt')
-        print(soup.prettify().encode('utf-8'))
         #the Leshan html is a tree structure with elements given as objects>instances>resources
-        objects = soup.find_all(attrs={'ng-repeat':'object in objects'})
+        objects = page_source.find_all(attrs={'ng-repeat':'object in objects'})
 
         for object_ in objects:         
             instances = object_.find_all(attrs={'ng-repeat':'instance in object.instances'})
@@ -98,60 +138,19 @@ class LRest():
                 resources = instances[i].find_all(attrs={'ng-repeat':'resource in instance.resources'})
             
                 for resource in resources:
-                    resource_name = resource.find(class_='resource-name').text
-                    print(resource_name)
+                    resource_name = resource.find(class_='resource-name').text.strip()
                     resource_id = resource.find('button').attrs['tooltip-html-unsafe'].split('>')[1]
 
                     resource_dict[resource_name]=resource_id
-
-                #we make two separate dictionaries, for when the user searches with and without an object.
-                instance_dict[i] = resource_dict
-                #default_instance_dict[i]=[default_instance_dict[i],resource_dict]
-                default_instance_dict.setdefault([i],[]).append(resource_dict)
             
-            object_name = object_.find(class_='object-name').text
+                instance_dict[i]=resource_dict
+                
+            object_name = object_.find(class_='object-name').text.strip()
             object_dict[object_name] = instance_dict
-            object_dict.setdefault(['default'],[]).append(default_instance_dict)
-           # object_dict['default'] = [object_dict['default'],default_instance_dict]    
 
-        print(object_dict)
-        return object_dict
+        #convert the dictionary to json
+        page_objects = json.dumps(object_dict)
+
+        return page_objects
             
-    def getSourceFromText(self,file_):
-        '''get the source from an html text file instead of going to the webpage. for testing purposes'''
-        f=open(file_)
-        content=f.read()
-        return BeautifulSoup(content,'html.parser')
 
-
-    def getSource(self,url):
-        '''returns the rendered html of the leshan client'''
-        #launch headless chrome
-        options = webdriver.ChromeOptions()
-        options.add_argument('headless')
-        options.add_argument('disable-gpu')
-        driver = webdriver.Chrome(chrome_options=options)
-
-        #navigate to leshan client and return rendered html source
-        #driver.get(url)
-        driver.get('http://169.254.235.45:5004/#/clients/6803-10.20.51.218')
-        time.sleep(2)
-        encoded_source=driver.page_source.encode('utf-8')
-        driver.close()
-
-        return BeautifulSoup(encoded_source,'html.parser')
-
-
-    def printDictionary(self):
-        '''prints the mappings dictionary'''
-        print(self.mappings)
-
-    def printInstances(self):
-        '''prints available instances with their id'''
-        print('instances: ')
-        print(self.mappings.keys())
-
-    def printResources(self, instance):
-        '''prints resources associated to a instance'''
-        print('resources on instance ' + instance + ': ')
-        print(self.mappings[instance]['resource'].keys())
