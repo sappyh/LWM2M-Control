@@ -31,7 +31,7 @@ class LRest():
         
         self.server = server
         self.client = client
-        self.object_mappings = self.getSource(server,client)
+        self.page_objects = self.getSource(server,client)
         #print(self.object_mappings)
         #self.object_mappings = self.parseUrl('http://' + server + '/#/clients/' + client)
 
@@ -83,46 +83,52 @@ class LRest():
         # raise error if http request fails
         r.raise_for_status()
         '''
-    def searchDictionary(resource,object_=None,instance=None):
-        '''searches the dictionary or object>instance>resources to find the desired resource to activate'''
-        obj_matches=[]
-        if object_=None:     
-            for obj_key,obj_val in self.page_objects.items():
-                res_val = self.searchObjects(obj_key,instance))
-                if res_val is not None:  
-                    obj_matches.append(res_val)
-                if len(matches)>0:
-                    raise ValueError("Multiple resources were found that satisfy conditions. Please specify Object name")
+
+    def searchDictionary2(self,resource,object_=None,instance=None):
+        matches=[]
+        if object_ is None:
+            if instance is None:
+                for obj_key in self.page_objects.keys():
+                    print("searching: " + obj_key)
+                    for inst_key in self.page_objects[obj_key].keys():
+                        print("     searching: " + inst_key)
+                        matches = self.searchInstances2(resource,obj_key,inst_key,matches)
+            else:
+                for obj_key in self.page_objects.keys():
+                    matches = self.searchInstances2(resource,obj_key,instance,matches)
         else:
-            res_val = self.searchObjects(object_)
-        
-        if res_val is None:
+             #handle the case where the user entered an instance in the object_ variable
+            if object_.isnumeric():
+                instance = object_
+                for obj_key in self.page_objects.keys():
+                    matches = self.searchInstances2(resource,obj_key,instance,matches)
+
+            # the general case if the user enters in variables in the intended order
+            else: 
+                if instance is None:
+                    for inst_key in self.page_objects[object_].keys():
+                        matches = self.searchInstances2(resource,object_,inst_key,matches)
+                else:
+                    matches = self.searchInstances2(resource,object_,instance,matches)
+            
+        if len(matches)==0:
             raise ValueError("Could not find a resource that satisfies conditions")
+        
+        return matches[0]
 
-        return res_val
 
-
-    def searchObjects(obj_key,instance):
-        '''helper method of searchDictionary that searches the top level objects in the dictionary'''
-        inst_matches=[]
-        if instance=None:    
-            for inst_key,inst_val in self.page_objects[obj_key].items():
-                res_val = self.searchInstances(obj_key,inst_key))
-                if res_val is not None:  
-                    inst_matches.append(res_val)          
-                if len(inst_matches)>0:
-                    raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number)
-        else:
-            instance_matches.append(self.searchInstances(obj_key,instance))  
-    
-        return instance_matches[0]
-
-    def searchInstances(obj_key,inst_key):
-        for res_key,res_val in self.page_objects[obj_key][inst_key].items():
+    def searchInstances2(self,resource,object_,instance,matches):
+        for res_key,res_val in self.page_objects[object_][instance].items():
             if res_key==resource:
-                return res_val
-        return None
+               matches.append(res_val)
+               print(matches)
+            #if len(matches)>1:
+            #    raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number or object name")
+        return matches
 
+
+        
+        
 
     def getSource(self,server,client):
         '''returns the source from a file if available or the html if not'''
@@ -170,18 +176,20 @@ class LRest():
         url - the url that contains the leshan client
         '''
         object_dict={}
-        instance_dict={}
-        resource_dict={}
+        
+        
 
         #the Leshan html is a tree structure with elements given as objects>instances>resources
         objects = page_source.find_all(attrs={'ng-repeat':'object in objects'})
 
         for object_ in objects:         
             instances = object_.find_all(attrs={'ng-repeat':'instance in object.instances'})
+            instance_dict={}
 
             for i in range(len(instances)):
                 resources = instances[i].find_all(attrs={'ng-repeat':'resource in instance.resources'})
-            
+                resource_dict={}
+                
                 for resource in resources:
                     resource_name = resource.find(class_='resource-name').text.strip()
                     resource_id = resource.find('button').attrs['tooltip-html-unsafe'].split('>')[1]
