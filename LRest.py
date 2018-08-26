@@ -20,7 +20,7 @@ class LRest():
 
     ERROR_MSG = "Multiple resources were found that satisfy the given inputs. Refine your search by specifying the Object and or instance"
 
-    def __init__(self,server,client):
+    def __init__(self,url):
         '''sets the information required for REST commands
         Keyword arguments:
         leshanServer -- the ip address and port where the leshan server is residing.
@@ -29,21 +29,20 @@ class LRest():
         xmlFolder -- the model folder that contains the GUI element data for the leshan server.
         '''
         
-        self.server = server
-        self.client = client
-        self.page_objects = self.getSource(server,client)
-        #print(self.object_mappings)
-        #self.object_mappings = self.parseUrl('http://' + server + '/#/clients/' + client)
+        self.url=url
+        self.page_objects = self.getSource(url)
 
-    def get(self, resource, object_='default' ,instance=0, timeout=4):
+    def read(self, resource, object_=None ,instance=None, timeout=4):
         '''reads the value of the specified instance and resource on the leshan server
         Keyword arguments:
         instance -- string of the instance, eg LED,LCD,Button.
         resource -- string of the resource, eg switch_1_closed, battery_test.
         '''
+        #search through dictionary to find the resource id to call
+        res_id = self.searchDictionary(resource,object_,instance)
 
         # make request
-        r = requests.get('http://'+ self.server+ '/api/clients/'+ self.client +self.object_mappings[object_][instance][resource],timeout=timeout)
+        r = requests.get(self.url.replace('#','api') + res_id,timeout=timeout)
 
         # raise error if http request fails
         r.raise_for_status()
@@ -51,38 +50,45 @@ class LRest():
         rDict = json.loads(r.text)
         return rDict['content']['value']
 
-    def put(self, instance, resource, text, timeout = 4):
+    def write(self, instance, resource, text, timeout = 4):
         '''writes text to the given instance on the leshan server
         Keyword arguments:
         instance -- string of the instance, eg LED,LCD,Button.
         resource -- string of the resource, eg switch_1_closed, battery_test.
         '''
+        res_id = self.searchDictionary(resource,object_,instance)
         # make request
-        '''
-        r = requests.put(
-            'http://' + self.leshanServer + '/api/clients/' + self.clientEndpoint + '/' + self.mappings[instance][
-                'id'] + '/' + self.clientNumber + '/' + self.mappings[instance]['resource'][resource],
-            json={'id': self.mappings[instance]['resource'][resource], 'value': text},timeout=timeout)
+        r = requests.put(self.url.replace('#','api') + res_id, json={'id': res_id, 'value': text},timeout=timeout)
         # raise error if http request fails
         r.raise_for_status()
 
-        '''
-
-    def post(self, instance, resource, timeout = 4):
+    def observe(self, instance, resource, timeout = 4):
         '''Posts to the given instance on the leshan server
         Keyword arguments:
         instance -- string of the instance, eg LED,LCD,Button.
         resource -- string of the resource, eg switch_1_closed, battery_test.
         '''
-        '''
+        res_id = self.searchDictionary(resource,object_,instance)
         # make request
-        r = requests.post(
-            'http://' + self.leshanServer + '/api/clients/' + self.clientEndpoint + '/' + self.mappings[instance][
-                'id'] + '/' + self.clientNumber + '/' + self.mappings[instance]['resource'][resource],timeout=timeout)
+        r = requests.post(self.url.replace('#','api') + res_id + '/observe',timeout=timeout)
 
         # raise error if http request fails
         r.raise_for_status()
-        '''
+
+    def discover(self,instance,resource,timeout=4):
+        res_id = self.searchDictionary(resource,object_,instance)       
+        r = requests.get(self.url.replace('#','api') + res_id + '/discover',timeout=timeout)
+        r.raise_for_status()
+        
+    def execute(self,instance,resource,timeout=4):
+        res_id = self.searchDictionary(resource,object_,instance)
+        r = requests.post(self.url.replace('#','api') + res_id,timeout=timeout)
+        r.raise_for_status()
+
+    def delete(self,instance,resource,timeout=4):
+        res_id = self.searchDictionary(resource,object_,instance)
+        r=requests.delete(self.url.replace('#','api') + res_id,timeout=timeout)
+        r.raise_for_status()
 
     def searchDictionary(self,resource,object_=None,instance=None):
         matches=[]
@@ -122,40 +128,46 @@ class LRest():
             return []
 
         for res_key,res_val in self.page_objects[object_][instance].items():
-            if res_key==resource:
+            if res_key.lower()==resource.lower():
                 matches.append(res_val)
             if len(matches)>1:
-                raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number or object name")
+                raise ValueError("Multiple resources were found that satisfy conditions to match resource: " + resource +". Please specify instance number or object name")
 
         return matches
 
 
-    def getSource(self,server,client):
+    def getSource(self,url):
         '''returns the source from a file if available or the html if not'''
         for file_name in os.listdir('cached_clients'):
+            client = url.split(r'/')[-1]
             if file_name==client+'.json':
                 return json.load(open('cached_clients\\' + file_name))
 
-        return self.getSourceFromHTML(server,client)
+        return self.getSourceFromHTML(url,client)
 
-    def getSourceFromHTML(self,server,client):
+    def getSourceFromHTML(self,url,client):
         #launch headless chrome
         driver = self.setBrowser()
 
         #get the raw html from the webpage
-        encoded_source = self.fetchHTML(driver,'http://' + server + '/#/clients/' + client)
+        encoded_source = self.fetchHTML(driver,url)
 
         #parse the url into json
         object_dict = self.parseHTML(BeautifulSoup(encoded_source,'html.parser'))
 
+
+        if len(object_dict)==0:
+            raise IOError("URL was not rendered into a dictionary")
+            
         #cache the page_objects of this client so we dont have to connect to its server again to fetch html
         self.cacheClient(object_dict,client)
 
         return object_dict
 
     def fetchHTML(self,driver,url):
-        #driver.get(url)
-        driver.get('https://leshan.eclipse.org/#/clients/ezhiand-test-virtualdev-leshan')
+        driver.get(url)
+        print('https://leshan.eclipse.org/#/clients/ezhiand-test-virtualdev-leshan')
+        print(url)
         time.sleep(2)
         encoded_source=driver.page_source.encode('utf-8')
         driver.close()
