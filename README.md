@@ -22,7 +22,6 @@ runner.discover("Lifetime")
 ```
 
 ## Methods
-```
 Available methods are read,write,observe,discover,excecute which take the following inputs in order:
 `resource,object_=None,instance_=None,timeout=TIMEOUT`  
 Write takes an additional parameter: text  
