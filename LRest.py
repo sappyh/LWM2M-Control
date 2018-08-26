@@ -32,6 +32,7 @@ class LRest():
         self.server = server
         self.client = client
         self.page_objects = self.getSource(server,client)
+        print(self.page_objects)
         #print(self.object_mappings)
         #self.object_mappings = self.parseUrl('http://' + server + '/#/clients/' + client)
 
@@ -189,7 +190,7 @@ class LRest():
             for i in range(len(instances)):
                 resources = instances[i].find_all(attrs={'ng-repeat':'resource in instance.resources'})
                 resource_dict={}
-                
+
                 for resource in resources:
                     resource_name = resource.find(class_='resource-name').text.strip()
                     resource_id = resource.find('button').attrs['tooltip-html-unsafe'].split('>')[1]
