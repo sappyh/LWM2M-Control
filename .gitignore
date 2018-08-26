@@ -3,3 +3,4 @@ LeshanRestAPI/__pycache__
 .vscode
 build
 dist
+LeshanRestAPI.egg-info/
