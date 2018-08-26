@@ -7,7 +7,7 @@ Install using pip
 
 ## Getting Started
 Find the url of the Leshan client you want to interface with. Some examples are found on on the [leshan website](https://leshan.eclipse.org/#/clients)  
-First import the library and instantiate a new class of Client(), passing in the url. If this is the first time you have connected to this client, the html will be extracted and cached in the cached_clients folder in the installation directory of this library.. Future connections will use this json cache to avoid the time consuming process of extracting the html from the client webpage. If the webpage has changed from your cache, supply the parameter refresh=True to your instantiation of Client().  
+First import the library and instantiate a new class of Client(), passing in the url. If this is the first time you have connected to this client, the html will be extracted and cached in the cached_clients folder in the installation directory of this library. Future connections will use this json cache to avoid the time consuming process of extracting the html from the client webpage. If the webpage has changed from your cache, supply the parameter refresh=True to your instantiation of Client().  
 
 LeshanRestAPI uses json representation of the client objects and searches this dictionary for a match on the resource supplied by the user. The user can supply additional parameters instance or object_ if the client webpage has more than one resource with the same name.  
 
