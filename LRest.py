@@ -84,33 +84,31 @@ class LRest():
         r.raise_for_status()
         '''
 
-    def searchDictionary2(self,resource,object_=None,instance=None):
+    def searchDictionary(self,resource,object_=None,instance=None):
         matches=[]
         if object_ is None:
             if instance is None:
                 for obj_key in self.page_objects.keys():
-                    print("searching: " + obj_key)
                     for inst_key in self.page_objects[obj_key].keys():
-                        #print("     searching: " + inst_key)
-                        matches = self.searchInstances2(resource,obj_key,inst_key,matches)
+                        matches = self.searchInstances(resource,obj_key,inst_key,matches)
             else:
                 instance = str(instance)    #convert to string if user entered an int
                 for obj_key in self.page_objects.keys():
-                    matches = self.searchInstances2(resource,obj_key,instance,matches)
+                    matches = self.searchInstances(resource,obj_key,instance,matches)
         else:
-             #handle the case where the user entered an instance in the object_ variable
+ #handle the case where the user entered an instance in the object_ variable. This is needed because python is not strongly typed and cant method overload.
             try:
                 int(object_)
                 instance = str(object_)
                 for obj_key in self.page_objects.keys():
-                    matches = self.searchInstances2(resource,obj_key,instance,matches)
+                    matches = self.searchInstances(resource,obj_key,instance,matches)
             except:
-            # the general case if the user enters in variables in the intended order
+                # the general case if the user enters in variables in the intended order
                 if instance is None:
                     for inst_key in self.page_objects[object_].keys():
-                        matches = self.searchInstances2(resource,object_,inst_key,matches)
+                        matches = self.searchInstances(resource,object_,inst_key,matches)
                 else:
-                    matches = self.searchInstances2(resource,object_,instance,matches)
+                    matches = self.searchInstances(resource,object_,instance,matches)
             
         if len(matches)==0:
             raise ValueError("Could not find a resource that satisfies conditions")
@@ -118,7 +116,7 @@ class LRest():
         return matches[0]
 
 
-    def searchInstances2(self,resource,object_,instance,matches):
+    def searchInstances(self,resource,object_,instance,matches):
         #if this object doesnt have an instance we return an empty list
         if self.page_objects.get(object_).get(instance) is None:
             return []
@@ -126,16 +124,11 @@ class LRest():
         for res_key,res_val in self.page_objects[object_][instance].items():
             if res_key==resource:
                 matches.append(res_val)
-                print(matches)
             if len(matches)>1:
                 raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number or object name")
 
         return matches
 
-
-
-        
-        
 
     def getSource(self,server,client):
         '''returns the source from a file if available or the html if not'''
