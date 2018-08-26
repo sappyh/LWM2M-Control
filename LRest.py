@@ -32,7 +32,6 @@ class LRest():
         self.server = server
         self.client = client
         self.page_objects = self.getSource(server,client)
-        print(self.page_objects)
         #print(self.object_mappings)
         #self.object_mappings = self.parseUrl('http://' + server + '/#/clients/' + client)
 
@@ -92,15 +91,16 @@ class LRest():
                 for obj_key in self.page_objects.keys():
                     print("searching: " + obj_key)
                     for inst_key in self.page_objects[obj_key].keys():
-                        print("     searching: " + inst_key)
+                        #print("     searching: " + inst_key)
                         matches = self.searchInstances2(resource,obj_key,inst_key,matches)
             else:
+                instance = str(instance)    #convert to string if user entered an int
                 for obj_key in self.page_objects.keys():
                     matches = self.searchInstances2(resource,obj_key,instance,matches)
         else:
              #handle the case where the user entered an instance in the object_ variable
             if object_.isnumeric():
-                instance = object_
+                instance = str(object_)
                 for obj_key in self.page_objects.keys():
                     matches = self.searchInstances2(resource,obj_key,instance,matches)
 
@@ -119,13 +119,19 @@ class LRest():
 
 
     def searchInstances2(self,resource,object_,instance,matches):
+        #if this object doesnt have an instance we return an empty list
+        if self.page_objects.get(object_).get(instance) is None:
+            return []
+
         for res_key,res_val in self.page_objects[object_][instance].items():
             if res_key==resource:
-               matches.append(res_val)
-               print(matches)
-            #if len(matches)>1:
-            #    raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number or object name")
+                matches.append(res_val)
+                print(matches)
+            if len(matches)>1:
+                raise ValueError("Multiple resources were found that satisfy conditions. Please specify instance number or object name")
+
         return matches
+
 
 
         
@@ -147,12 +153,12 @@ class LRest():
         encoded_source = self.fetchHTML(driver,'http://' + server + '/#/clients/' + client)
 
         #parse the url into json
-        page_objects = self.parseHTML(BeautifulSoup(encoded_source,'html.parser'))
+        object_dict = self.parseHTML(BeautifulSoup(encoded_source,'html.parser'))
 
         #cache the page_objects of this client so we dont have to connect to its server again to fetch html
-        self.cacheClient(page_objects,client)
+        self.cacheClient(object_dict,client)
 
-        return page_objects
+        return object_dict
 
     def fetchHTML(self,driver,url):
         #driver.get(url)
@@ -168,7 +174,10 @@ class LRest():
         options.add_argument('disable-gpu')
         return webdriver.Chrome(chrome_options=options)
 
-    def cacheClient(self,page_objects,client):
+    def cacheClient(self,object_dict,client):
+        #convert the dictionary to json string
+        page_objects = json.dumps(object_dict)
+        #open and write the json string to file
         f=open('cached_clients\\' + client + '.json','w')
         f.write(page_objects)
 
@@ -177,8 +186,6 @@ class LRest():
         url - the url that contains the leshan client
         '''
         object_dict={}
-        
-        
 
         #the Leshan html is a tree structure with elements given as objects>instances>resources
         objects = page_source.find_all(attrs={'ng-repeat':'object in objects'})
@@ -202,9 +209,6 @@ class LRest():
             object_name = object_.find(class_='object-name').text.strip()
             object_dict[object_name] = instance_dict
 
-        #convert the dictionary to json
-        page_objects = json.dumps(object_dict)
-
-        return page_objects
+        return object_dict
             
 
