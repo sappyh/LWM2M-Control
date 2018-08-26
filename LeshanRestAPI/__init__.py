@@ -18,9 +18,13 @@ import os
 import requests
 import json
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+TIMEOUT = 4
 
 class Client():
     '''Wrapper class for robot libraries in python that use RESTful API'''
+    #TIMEOUT = 4
+    #DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
     def __init__(self, url, refresh=False):
         '''sets the information required for REST commands
@@ -33,7 +37,7 @@ class Client():
         self.refresh = refresh
         self.page_objects = self.__getSource()
 
-    def read(self, resource, object_=None, instance=None, timeout=4):
+    def read(self, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''reads the value of the specified instance and resource on the leshan server
         Keyword arguments:
         instance -- string of the instance, eg LED,LCD,Button.
@@ -51,7 +55,7 @@ class Client():
         # return the value of the resource
         return rDict['content']['value']
 
-    def write(self, text, resource, object_=None, instance=None, timeout=4):
+    def write(self, text, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''writes text to selected resource on the leshan server
         Keyword arguments:
         text -- text to write to resrouce
@@ -68,7 +72,7 @@ class Client():
         # raise error if http request fails
         r.raise_for_status()
 
-    def observe(self, resource, object_=None, instance=None, timeout=4):
+    def observe(self, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''Observe the selected resource on the leshan server
         Keyword arguments:
         resource -- resource you want to observe
@@ -84,7 +88,7 @@ class Client():
         # raise error if http request fails
         r.raise_for_status()
 
-    def discover(self, resource, object_=None, instance=None, timeout=4):
+    def discover(self, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''discover the selected resource on the leshan server
         Keyword arguments:
         resource -- resource you want to observe
@@ -100,7 +104,7 @@ class Client():
         # raise error if request fails
         r.raise_for_status()
 
-    def execute(self, resource, object_=None, instance=None, timeout=4):
+    def execute(self, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''Execute the selected resource on the leshan server
         Keyword arguments:
         resource -- resource you want to observer
@@ -116,7 +120,7 @@ class Client():
         # raise error if request fails
         r.raise_for_status()
 
-    def delete(self, resource, object_=None, instance=None, timeout=4):
+    def delete(self, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''delete the given resource on the leshan server.
         Keyword arguments:
         resource -- the resource to delete
@@ -208,9 +212,9 @@ class Client():
         '''returns the source from a file if available or the html if not'''
         if not self.refresh:
             # check if we have a chached dictionary of this client
-            for file_name in os.listdir('cached_clients'):
+            for file_name in os.listdir(DIR_PATH + '\\cached_clients'):
                 if file_name == self.client+'.json':
-                    return json.load(open('cached_clients\\' + file_name))
+                    return json.load(open(DIR_PATH+'\\cached_clients\\' + file_name))
         # if we dont then we have to do the more time consuming option of scraping the html
         return self.__getSourceFromHTML()
 
@@ -259,7 +263,7 @@ class Client():
         # convert the dictionary to json string
         page_objects = json.dumps(object_dict)
         # open and write the json string to file
-        f = open('cached_clients\\' + self.client + '.json', 'w')
+        f = open(DIR_PATH + '\\cached_clients\\' + self.client + '.json', 'w')
         f.write(page_objects)
 
     def __parseHTML(self, page_source):
