@@ -36,7 +36,7 @@ Write takes an additional parameter: text
 `text,resource,object_None,instance=None,timeout=TIMEOUT`
 
 ## Additional Details
-The user does not need to enter all details of the object for it to be found. In most cases, the resource name is sufficient. Only when there is more than one resource does the user need to provide additional information such as instance or object_.  
+The user does not need to enter all details of the object for it to be found. In most cases, the resource name is sufficient. Only when there is more than one resource does the user need to provide additional information such as instance or object_.  Note in examples two and three that the instance can be overloaded in the object_ variable.
 The following example illustrates this on this [client](https://leshan.eclipse.org/#/clients/358185090000024)
 ```
 read("Lifetime")
