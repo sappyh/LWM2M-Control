@@ -99,13 +99,13 @@ class LRest():
                     matches = self.searchInstances2(resource,obj_key,instance,matches)
         else:
              #handle the case where the user entered an instance in the object_ variable
-            if object_.isnumeric():
+            try:
+                int(object_)
                 instance = str(object_)
                 for obj_key in self.page_objects.keys():
                     matches = self.searchInstances2(resource,obj_key,instance,matches)
-
+            except:
             # the general case if the user enters in variables in the intended order
-            else: 
                 if instance is None:
                     for inst_key in self.page_objects[object_].keys():
                         matches = self.searchInstances2(resource,object_,inst_key,matches)
