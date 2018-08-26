@@ -1,13 +1,11 @@
 import setuptools
 
-libpath = r"autogui\src\GUILibrary\bin\Release"
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="LeshanRestAPI",
-    version="0.0.2",
+    version="0.0.3",
     author="Alex Lundberg",
     author_email="alex.lundberg@gmail.com",
     description="Wrapper for Leshan IOT RESTful API",
