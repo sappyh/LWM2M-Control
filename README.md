@@ -30,7 +30,7 @@ observe
 discover  
 excecute  
 ```
-These methods take the following inputs in order:
+These methods take the following inputs in order:  
 `resource,object_=None,instance_=None,timeout=TIMEOUT`  
 Write takes an additional parameter: text  
 `text,resource,object_None,instance=None,timeout=TIMEOUT`
@@ -49,7 +49,7 @@ read("Lifetime","LwM2M Server",0)     #search resource LifeTime on Object LwM2M 
 
 Since "Lifetime" resource exists only once on this client. The user can use any of the above to read from it.
 
-## Trouble-Shooting
+## Troubleshooting
 If you cannot operate on a resource. Try operating on the resource directly through its webportal. Often times, methods are not allowed for a resource or the resource is not available.
 
 More details of the leshan RESTful API is given [here](http://robertsrhapsody.blogspot.com/2018/01/eclipse-leshan-rest-apis.html)
