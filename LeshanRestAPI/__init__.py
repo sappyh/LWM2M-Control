@@ -23,8 +23,6 @@ TIMEOUT = 4
 
 class Client():
     '''Wrapper class for robot libraries in python that use RESTful API'''
-    #TIMEOUT = 4
-    #DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
     def __init__(self, url, refresh=False):
         '''sets the information required for REST commands
