@@ -53,7 +53,11 @@ class Client():
         # convert the output into a dictionary and return the result
         rDict = json.loads(r.text)
         # return the value of the resource
-        return rDict['content']['value']
+        try:
+            return rDict['content']['value']
+        except KeyError:
+            raise KeyError("resource " + resource +
+                           " is not available for reading")
 
     def write(self, text, resource, object_=None, instance=None, timeout=TIMEOUT):
         '''writes text to selected resource on the leshan server
@@ -68,7 +72,7 @@ class Client():
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
         r = requests.put(self.url.replace('#', 'api') + res_id,
-                         json={'id': res_id, 'value': text}, timeout=timeout)
+                         json={'id': res_id.split("/")[-1], 'value': text}, timeout=timeout)
         # raise error if http request fails
         r.raise_for_status()
 
@@ -161,16 +165,24 @@ class Client():
                         resource, obj_key, instance, matches)
         else:
             try:
-                # handle the case where the user entered an instance in the object_ variable.
+                # check if the user swapped object and instance
                 int(object_)
-                # set instance to the object_ variable to be consistent
-                instance = str(object_)
+                # if so then we swap object and instance to be consistent
+                temp = str(object_)
+                object_ = str(instance.lower())
+                instance = temp
                 # user didnt enter an actual object so we must loop through each object and then search for supplied instance
-                for obj_key in self.page_objects.keys():
+                if object_ == 'None':
+                    for obj_key in self.page_objects.keys():
+                        matches = self.__searchInstances(
+                            resource, obj_key, instance, matches)
+                else:
                     matches = self.__searchInstances(
-                        resource, obj_key, instance, matches)
-            except:
+                        resource, object_, instance, matches)
+            except ValueError:
                 # the general case if the user enters in variables in the intended order
+                # convert input object to lower case
+                object_ = object_.lower()
                 if instance is None:
                     # if user supplied object but not instance we search through all instances in supplied object
                     for inst_key in self.page_objects[object_].keys():
@@ -178,11 +190,13 @@ class Client():
                             resource, object_, inst_key, matches)
                 else:
                     # the simplest case where the user entered both an instance and an object in the correct order.
+                    # convert to instance number to a string.
+                    instance = str(instance)
                     matches = self.__searchInstances(
                         resource, object_, instance, matches)
 
         if len(matches) == 0:
-            raise ValueError(
+            raise LookupError(
                 "Could not find a resource that satisfies conditions")
 
         return matches[0]
@@ -194,17 +208,18 @@ class Client():
         object_ -- the highest level object containing the instance and resource
         instance -- the instance of this resource under the object
         '''
-        # if this object doesnt have an instance we return an empty list
-        if self.page_objects.get(object_).get(instance) is None:
-            return []
+        # if this object doesnt have an instance we return to sender
+        if self.page_objects.get(object_) is None or self.page_objects.get(object_).get(instance) is None:
+            return matches
 
         for res_key, res_val in self.page_objects[object_][instance].items():
             if res_key.lower() == resource.lower():
                 matches.append(res_val)
+                print("match found: " + res_val)
             # throw error if we have found multiple resources with the conditions
             if len(matches) > 1:
-                raise ValueError("Multiple resources were found that satisfy conditions to match resource: " +
-                                 resource + ". Please specify instance number or object name")
+                raise LookupError("Multiple resources were found that satisfy conditions to match resource: " +
+                                  resource + ". Please specify instance number or object name")
 
         return matches
 
@@ -230,6 +245,8 @@ class Client():
         # raise error if parsing was not successful
         if len(object_dict) == 0:
             raise IOError("URL was not rendered into a dictionary")
+        # convert object_dict to lowercase
+        object_dict = {k.lower(): v for k, v in object_dict.items()}
         # cache the page_objects of this client so we dont have to connect to its server again to fetch html
         self.__cacheClient(object_dict)
         return object_dict
@@ -298,3 +315,7 @@ class Client():
             object_dict[object_name] = instance_dict
 
         return object_dict
+
+    def printPageObjects(self):
+        '''helper method to pretty print the page_objects for debugging'''
+        print(json.dumps(self.page_objects, indent=4, sort_keys=True))

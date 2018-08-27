@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="LeshanRestAPI",
-    version="0.0.4",
+    version="0.0.5",
     author="Alex Lundberg",
     author_email="alex.lundberg@gmail.com",
     description="Wrapper for Leshan IOT RESTful API",
