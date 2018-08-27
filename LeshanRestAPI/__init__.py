@@ -21,6 +21,7 @@ import json
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 TIMEOUT = 4
 
+
 class Client():
     '''Wrapper class for robot libraries in python that use RESTful API'''
 
@@ -31,7 +32,8 @@ class Client():
         refresh -- get the elements by scraping the html even if we have the client cached.
         '''
         self.url = url
-        self.client = url.split(r'/')[-1] #extract the client name from the html which we use for the name of the cached client.
+        # extract the client name from the html which we use for the name of the cached client.
+        self.client = url.split(r'/')[-1]
         self.refresh = refresh
         self.page_objects = self.__getSource()
 
