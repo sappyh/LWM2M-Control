@@ -168,6 +168,16 @@ class Client():
             '#', 'api') + res_id, timeout=timeout)
         # raise error if request fails
         r.raise_for_status()
+    def assertread(self,assertValue,resource,object_=None,instance=None,timeout=TIMEOUT):
+        '''check if output from read is equal to input string. Exists for testing ease in robot-framework.
+        Keyword arguments:
+        assertValue -- the string to assert equals on the value returned from the REST read call on resource.
+        resource -- the resource to read.
+        object_ -- the highest level object containing the instance and resource
+        instance -- the instance of this resource under the object
+        timeout -- time to do rest command before timing out
+        '''
+        assert(assertValue==self.read(resource,object_,instance,timeout))
 
     def __searchDictionary(self, resource, object_=None, instance=None):
         '''search the page_objects dictionary for a match on the selected resource
@@ -244,7 +254,6 @@ class Client():
         for res_key, res_val in self.page_objects[object_][instance].items():
             if res_key.lower() == resource.lower():
                 matches.append(res_val)
-                print("match found: " + res_val)
             # throw error if we have found multiple resources with the conditions
             if len(matches) > 1:
                 raise LookupError("Multiple resources were found that satisfy conditions to match resource: " +
