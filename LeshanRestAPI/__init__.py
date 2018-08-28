@@ -21,6 +21,35 @@ import json
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 TIMEOUT = 4
 
+class Server():
+    '''returns information on the clients attached to the server'''
+    def __init__(self, url):
+        self.url=url
+
+    def getClients(self,timeout=TIMEOUT):
+        '''return the client endpoints attached to this server'''
+        r = requests.get(self.url + "/api/clients", timeout=timeout)
+        # raise error if http request fails
+        r.raise_for_status()
+        # return result
+        rDict = json.loads(r.text)
+        clientList=[]
+        for client in rDict:
+            clientList.append(client['endpoint'])
+        return clientList
+
+    def cacheClients(self,refresh=False):
+        '''return a list of client objects attached to this server and cache the clients'''
+        clientNames = self.getClients()
+        clientList = []
+        for clientName in clientNames:
+            #initialize a new client, cache it and add it to a list
+            client = Client(self.url + '/#/clients/' + clientName,refresh)
+            clientList.append(client)
+        return clientList
+
+    def __str__(self):
+        return self.url
 
 class Client():
     '''Wrapper class for robot libraries in python that use RESTful API'''
@@ -319,3 +348,6 @@ class Client():
     def printPageObjects(self):
         '''helper method to pretty print the page_objects for debugging'''
         print(json.dumps(self.page_objects, indent=4, sort_keys=True))
+    
+    def __str__(self):
+        return self.client
