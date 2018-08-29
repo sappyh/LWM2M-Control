@@ -12,8 +12,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait  # available since 2.4.0
 # available since 2.26.0
 from selenium.webdriver.support import expected_conditions as EC
+import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
-import json
 import os
 import requests
 import json
@@ -54,7 +54,7 @@ class Server():
 class Client():
     '''Wrapper class for robot libraries in python that use RESTful API'''
 
-    def __init__(self, url, refresh=False):
+    def __init__(self, url, refresh=False, models=None):
         '''sets the information required for REST commands
         Keyword arguments:
         url -- url of the leshan client
@@ -62,8 +62,10 @@ class Client():
         '''
         self.url = url
         # extract the client name from the html which we use for the name of the cached client.
-        self.client = url.split(r'/')[-1]
+        urlitems = url.split(r'/')
+        self.client = urlitems[urlitems.index('client')+1]
         self.refresh = refresh
+        self.models = models
         self.page_objects = self.__getSource()
 
     def read(self, resource, object_=None, instance=None, timeout=TIMEOUT):
@@ -168,6 +170,7 @@ class Client():
             '#', 'api') + res_id, timeout=timeout)
         # raise error if request fails
         r.raise_for_status()
+
     def assertread(self,assertValue,resource,object_=None,instance=None,timeout=TIMEOUT):
         '''check if output from read is equal to input string. Exists for testing ease in robot-framework.
         Keyword arguments:
@@ -264,13 +267,44 @@ class Client():
     def __getSource(self):
         '''returns the source from a file if available or the html if not'''
         if not self.refresh:
-            # check if we have a chached dictionary of this client
+            # check if we have a cached dictionary of this client
             for file_name in os.listdir(DIR_PATH + '\\cached_clients'):
                 if file_name == self.client+'.json':
                     return json.load(open(DIR_PATH+'\\cached_clients\\' + file_name))
         # if we dont then we have to do the more time consuming option of scraping the html
-        return self.__getSourceFromHTML()
+        if self.models is None:
+            return self.__getSourceFromHTML()
+        else:
+            return self.__getSourceFromXML()
+    
+    def __getSourceFromXML(self):
+        '''returns the source from the xml models folder which shows the server side resources'''
+        object_dict = {}
+        for filename in os.listdir(self.models):
+            if filename.endswith(".xml"): #ignore all files in models folder that are not xmls
+                # get the root of the xml document
+                root = ET.parse(os.path.join(self.models, filename)).getroot()
 
+                object_name = root.findall('Object')[0].getchildren()[0].text
+                object_id = root.findall('Object')[0].getchildren()[2].text
+
+                instance_dict={}
+                instance_id = '0'  #right now only one instance can be handled when using the xml parser.
+
+                 # iterate through root, and create the dictionary of resources
+                resource_dict = {}
+                for resource in root.findall('Object/Resources/Item'):
+                    resource_name = resource.getchildren()[0].text
+                    resource_id = resource.attrib['ID'] 
+                     #the resource_id given on the xml is different than the resource_id given by the html scrape so we convert this resource_id to be consistent
+                    resource_dict[resource_name] = '/' + object_id + '/' + instance_id + '/' + resource_id
+
+                # form the final outputDict
+                instance_dict[instance_id] = resource_dict #as we are only parsing for one instance currently we do not need a for loop like in the html scape
+                object_dict[object_name] = instance_dict
+
+        return object_dict
+        
     def __getSourceFromHTML(self):
         '''returns the dictionary of page_objects from the html of the client page'''
         # launch headless chrome
