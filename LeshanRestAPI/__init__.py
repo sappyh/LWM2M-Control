@@ -63,7 +63,7 @@ class Client():
         self.url = url
         # extract the client name from the html which we use for the name of the cached client.
         urlitems = url.split(r'/')
-        self.client = urlitems[urlitems.index('client')+1]
+        self.client = urlitems[urlitems.index('clients')+1]
         self.refresh = refresh
         self.models = models
         self.page_objects = self.__getSource()
