@@ -29,6 +29,7 @@ write
 observe  
 discover  
 excecute  
+AssertRead  
 ```
 These methods take the following inputs in order:  
 `resource,object_=None,instance_=None,timeout=TIMEOUT`  
