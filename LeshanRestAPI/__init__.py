@@ -61,9 +61,9 @@ class Client():
         refresh -- get the elements by scraping the html even if we have the client cached.
         '''
         self.url = url
+        self.requestUrl = self.url.replace('#', 'api').replace("/default",'').replace("client","clients")
         # extract the client name from the html which we use for the name of the cached client.
-        urlitems = url.split(r'/')
-        self.client = urlitems[urlitems.index('clients')+1]
+        self.client = self.requestUrl.split(r'/')[-1]
         self.refresh = refresh
         self.models = models
         self.page_objects = self.__getSource()
@@ -77,8 +77,7 @@ class Client():
         # search through dictionary to find the resource id to call
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
-        r = requests.get(self.url.replace(
-            '#', 'api') + res_id, timeout=timeout)
+        r = requests.get(self.requestUrl + res_id, timeout=timeout)
         # raise error if http request fails
         r.raise_for_status()
         # convert the output into a dictionary and return the result
@@ -102,7 +101,7 @@ class Client():
         # search through dictionary to find the resource id to call
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
-        r = requests.put(self.url.replace('#', 'api') + res_id,
+        r = requests.put(self.requestUrl + res_id,
                          json={'id': res_id.split("/")[-1], 'value': text}, timeout=timeout)
         # raise error if http request fails
         r.raise_for_status()
@@ -118,7 +117,7 @@ class Client():
         # search through dictionary to find the resource id to call
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
-        r = requests.post(self.url.replace('#', 'api') +
+        r = requests.post(self.requestUrl +
                           res_id + '/observe', timeout=timeout)
         # raise error if http request fails
         r.raise_for_status()
@@ -134,7 +133,7 @@ class Client():
         # search through dictionary to find the resource id to call
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
-        r = requests.get(self.url.replace('#', 'api') +
+        r = requests.get(self.requestUrl +
                          res_id + '/discover', timeout=timeout)
         # raise error if request fails
         r.raise_for_status()
@@ -150,8 +149,7 @@ class Client():
         # search through dictionary to find the resource id to call
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
-        r = requests.post(self.url.replace(
-            '#', 'api') + res_id, timeout=timeout)
+        r = requests.post(self.requestUrl + res_id, timeout=timeout)
         # raise error if request fails
         r.raise_for_status()
 
@@ -166,8 +164,7 @@ class Client():
         # search through dictionary to find the resource id to call
         res_id = self.__searchDictionary(resource, object_, instance)
         # make request
-        r = requests.delete(self.url.replace(
-            '#', 'api') + res_id, timeout=timeout)
+        r = requests.delete(self.requestUrl + res_id, timeout=timeout)
         # raise error if request fails
         r.raise_for_status()
 
@@ -190,7 +187,7 @@ class Client():
         instance -- the instance of this resource under the object
         '''
         matches = []
-
+        #TODO THIS IS BAD CODING. PUT THIS INTO EACH A SEPARATE METHOD!
         if object_ is None:
             if instance is None:
                 # if user did not supply object or instance then we check all objects and instances.
