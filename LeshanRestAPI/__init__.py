@@ -61,7 +61,9 @@ class Client():
         refresh -- get the elements by scraping the html even if we have the client cached.
         '''
         self.url = url
-        self.requestUrl = self.url.replace('#', 'api').replace("/default",'').replace("client","clients")
+        if 'clients' not in self.url:  #if we dont have the full clients name then we need to replace "client" with "clients"
+            self.requestUrl = self.requestUrl.replace("client","clients")
+        self.requestUrl = self.url.replace('#', 'api').replace("/default",'')
         # extract the client name from the html which we use for the name of the cached client.
         self.client = self.requestUrl.split(r'/')[-1]
         self.refresh = refresh
