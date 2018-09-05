@@ -28,7 +28,11 @@ class Server():
 
     def getClients(self,timeout=TIMEOUT):
         '''return the client endpoints attached to this server'''
-        r = requests.get(self.url + "/api/clients", timeout=timeout)
+        #sometimes the user may enter the url of the server with or without the #/clients appended to it.
+        if "clients" in self.url:
+            r = requests.get(self.url.replace('#','api'), timeout=timeout)
+        else:
+            r = requests.get(self.url + "/api/clients", timeout=timeout)
         # raise error if http request fails
         r.raise_for_status()
         # return result
@@ -267,9 +271,10 @@ class Client():
         '''returns the source from a file if available or the html if not'''
         if not self.refresh:
             # check if we have a cached dictionary of this client
-            for file_name in os.listdir(DIR_PATH + '\\cached_clients'):
+            for file_name in os.listdir(os.path.join(DIR_PATH,'cached_clients')):
                 if file_name == self.client+'.json':
-                    return json.load(open(DIR_PATH+'\\cached_clients\\' + file_name))
+                    file_path = os.path.join(DIR_PATH,'cached_clients',file_name)
+                    return json.load(open(file_path))
         # if we dont then we have to do the more time consuming option of scraping the html
         if self.models is None:
             return self.__getSourceFromHTML()
@@ -351,7 +356,8 @@ class Client():
         # convert the dictionary to json string
         page_objects = json.dumps(object_dict)
         # open and write the json string to file
-        f = open(DIR_PATH + '\\cached_clients\\' + self.client + '.json', 'w')
+        file_path = os.path.join(DIR_PATH,'cached_clients',self.client +'.json')
+        f = open(file_path, 'w')
         f.write(page_objects)
 
     def __parseHTML(self, page_source):
