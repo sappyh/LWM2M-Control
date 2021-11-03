@@ -1,19 +1,3 @@
-'''
-Library for RESTful API calls to the leshan server
-
-Pasha Stone
-pasha.stone@sandc.com
-
-Alex Lundberg
-alex.lundberg@sandc.com
-'''
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait  # available since 2.4.0
-# available since 2.26.0
-from selenium.webdriver.support import expected_conditions as EC
-import xml.etree.ElementTree as ET
-from bs4 import BeautifulSoup
 import os
 import requests
 import json
