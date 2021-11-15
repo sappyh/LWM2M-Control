@@ -7,7 +7,7 @@ import time
 import random
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-TIMEOUT = 4
+TIMEOUT = 5000
 
 class Server():
     '''returns information on the clients attached to the server'''
@@ -41,15 +41,18 @@ def clientRead(requestUrl, resource, logger, timeout=TIMEOUT):
         end=datetime.datetime.now()
         rtt=(end-start).total_seconds()*1000
         # raise error if http request fails
-        r.raise_for_status()
-        # convert the output into a dictionary and return the result
-        hDict = r.headers
-        rDict = json.loads(r.text)
-        client_name= requestUrl.split("/")[-1]
-        logger.info("Client Name: "+client_name+",LWM2M RTT: "+hDict['RTT']+", Application RTT: "+'%.2f' % rtt)
-        # return the value of the resource
         try:
-            return rDict['content']['value'], int(hDict['RTT'])
-        except KeyError:
-            raise KeyError("resource " + resource +
-                           " is not available for reading")
+            r.raise_for_status()
+            # convert the output into a dictionary and return the result
+            hDict = r.headers
+            rDict = json.loads(r.text)
+            client_name= requestUrl.split("/")[-1]
+            logger.info("Client Name: "+client_name+",LWM2M RTT: "+hDict['RTT']+", Application RTT: "+'%.2f' % rtt+", Temperature: "+ str(rDict['content']['value']))
+            # return the value of the resource
+            try:
+                return rDict['content']['value'], int(hDict['RTT'])
+            except KeyError:
+                raise KeyError("resource " + resource +
+                            " is not available for reading")
+        except HTTPError:
+            logger.info("Client Name: "+client_name+", Error")

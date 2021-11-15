@@ -11,7 +11,7 @@ server = Server('http://127.0.0.1:8080')
 print(server)
 clientlist=[]
 
-mesgpersec=5
+mesgpermin=10
 tl=Timeloop()
 
 @tl.job(interval=timedelta(seconds=1))
@@ -20,7 +20,7 @@ def get_client_list():
     clientlist = server.getClients()
     print(clientlist)
 
-@tl.job(interval=timedelta(seconds=1/mesgpersec))
+@tl.job(interval=timedelta(minutes=1/mesgpermin))
 def read_client():
     threads=[]
     global clientlist
