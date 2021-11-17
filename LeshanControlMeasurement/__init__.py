@@ -35,13 +35,14 @@ class Server():
         return self.url
 
 def clientRead(requestUrl, resource, logger, timeout=TIMEOUT):
-        time.sleep(random.randrange(50)/1000)
-        start=datetime.datetime.now()
-        r = requests.get(requestUrl + resource, timeout=timeout)
-        end=datetime.datetime.now()
-        rtt=(end-start).total_seconds()*1000
+        time.sleep(random.randrange(40))
+        
         # raise error if http request fails
         try:
+            start=datetime.datetime.now()
+            r = requests.get(requestUrl + resource, timeout=timeout)
+            end=datetime.datetime.now()
+            rtt=(end-start).total_seconds()*1000
             r.raise_for_status()
             # convert the output into a dictionary and return the result
             hDict = r.headers
@@ -49,10 +50,12 @@ def clientRead(requestUrl, resource, logger, timeout=TIMEOUT):
             client_name= requestUrl.split("/")[-1]
             logger.info("Client Name: "+client_name+",LWM2M RTT: "+hDict['RTT']+", Application RTT: "+'%.2f' % rtt+", Temperature: "+ str(rDict['content']['value']))
             # return the value of the resource
-            try:
-                return rDict['content']['value'], int(hDict['RTT'])
-            except KeyError:
-                raise KeyError("resource " + resource +
-                            " is not available for reading")
-        except HTTPError:
+            # try:
+            return rDict['content']['value'], int(hDict['RTT'])
+            # except KeyError:
+                # raise KeyError("resource " + resource +
+                            # " is not available for reading")
+        except requests.HTTPError:
+            client_name= requestUrl.split("/")[-1]
             logger.info("Client Name: "+client_name+", Error")
+            return 0,0

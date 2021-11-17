@@ -7,14 +7,14 @@ import threading
 import random
 import logging
 
-server = Server('http://127.0.0.1:8080')
+server = Server('http://10.5.4.11:8080')
 print(server)
 clientlist=[]
 
-mesgpermin=10
+mesgpermin=1
 tl=Timeloop()
 
-@tl.job(interval=timedelta(seconds=1))
+@tl.job(interval=timedelta(seconds=30))
 def get_client_list():
     global clientlist
     clientlist = server.getClients()
